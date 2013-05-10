@@ -1,13 +1,17 @@
 namespace NServiceBus
 {
-    using Transports;
-    using Unicast.Transport;
+	using Transports;
+	using Unicast.Transport;
 
-    /// <summary>
-    /// Transport definition for WindowsServiceBus    
-    /// </summary>
-    public class WindowsServiceBus : ITransportDefinition
-    {
-
-    }
+	/// <summary>
+	/// Transport definition for WindowsServiceBus    
+	/// </summary>
+	public class WindowsServiceBus : TransportDefinition
+	{
+		public WindowsServiceBus()
+		{
+			this.HasNativePubSubSupport = true;
+			this.HasSupportForCentralizedPubSub = true;
+		}
+	}
 }
