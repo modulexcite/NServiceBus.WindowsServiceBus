@@ -9,21 +9,23 @@ using Microsoft.ServiceBus.Messaging;
 using NServiceBus.Config;
 using NServiceBus.Features;
 using NServiceBus.Saga;
+using NServiceBus.Settings;
 using NServiceBus.Timeout.Core;
 using NServiceBus.Unicast.Queuing.WindowsServiceBus;
 using NServiceBus.Unicast.Subscriptions.MessageDrivenSubscriptions;
 
 namespace NServiceBus.Transports.WindowsServiceBus
 {
-	class WindowsServiceBusTransport : ConfigureTransport<NServiceBus.WindowsServiceBus>, IFeature
+	class WindowsServiceBusTransport : ConfigureTransport<NServiceBus.WindowsServiceBus>
 	{
-		protected override void InternalConfigure( Configure config, string connectionString )
+		protected override void InternalConfigure( Configure config )
 		{
 			var configSection = NServiceBus.Configure.GetConfigSection<WindowsServiceBusQueueConfig>() 
 				?? new WindowsServiceBusQueueConfig();
 
 			ServiceBusEnvironment.SystemConnectivity.Mode = ( ConnectivityMode )Enum.Parse( typeof( ConnectivityMode ), configSection.ConnectivityMode );
 
+			var connectionString = SettingsHolder.Get<string>( "NServiceBus.Transport.ConnectionString" );
 			var namespaceClient = NamespaceManager.CreateFromConnectionString( connectionString );
 			var serviceUri = namespaceClient.Address;
 			var factory = MessagingFactory.CreateFromConnectionString( connectionString );
@@ -100,10 +102,11 @@ namespace NServiceBus.Transports.WindowsServiceBus
 			get { return "Endpoint=sb://[machine-name]/ServiceBusDefaultNamespace;StsEndpoint=https://[machine-name]:9355/ServiceBusDefaultNamespace;RuntimePort=9354;ManagementPort=9355"; }
 		}
 
-		public void Initialize()
+		public override void Initialize()
 		{
+			base.Initialize();
+
 			Feature.Enable<WindowsServiceBusTransport>();
-			//Feature.Enable<MessageDrivenSubscriptions>();
 			Feature.Enable<TimeoutManager>();
 
 			InfrastructureServices.SetDefaultFor<ISagaPersister>( () => NServiceBus.Configure.Instance.RavenSagaPersister() );

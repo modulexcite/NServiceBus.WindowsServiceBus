@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Runtime.Serialization;
 using System.Runtime.Serialization.Formatters.Binary;
 using Microsoft.ServiceBus.Messaging;
@@ -8,42 +10,36 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
 {
     public class BrokeredMessageConverter
     {
-        public TransportMessage ToTransportMessage(BrokeredMessage message)
-        {
-            TransportMessage t;
-            var rawMessage = message.GetBody<byte[]>();
+		public TransportMessage ToTransportMessage( BrokeredMessage message )
+		{
+			TransportMessage t;
+			var rawMessage = message.GetBody<byte[]>();
 
-            if (message.Properties.Count == 0)
-            {
-                t = DeserializeMessage(rawMessage);
-            }
-            else
-            {
-                t = new TransportMessage();
-                if (!string.IsNullOrWhiteSpace(message.CorrelationId)) t.CorrelationId = message.CorrelationId;
-                t.TimeToBeReceived = message.TimeToLive;
+			if ( message.Properties.Count == 0 )
+			{
+				t = DeserializeMessage( rawMessage );
+			}
+			else
+			{
+				t = new TransportMessage( message.MessageId, message.Properties.ToDictionary( kvp => kvp.Key, kvp => kvp.Value.ToString() ) )
+				{
+					CorrelationId = message.CorrelationId,
+					TimeToBeReceived = message.TimeToLive
+				};
 
-                foreach (var header in message.Properties)
-                {
-                    t.Headers[header.Key] = header.Value.ToString();
-                }
+				var intent = message.Properties[ Headers.MessageIntent ].ToString();
+				t.MessageIntent = ( MessageIntentEnum )Enum.Parse( typeof( MessageIntentEnum ), intent );
 
-                t.MessageIntent =
-                    (MessageIntentEnum)
-                    Enum.Parse(typeof(MessageIntentEnum), message.Properties[Headers.MessageIntent].ToString());
-                t.Id = message.MessageId;
 				if ( !String.IsNullOrWhiteSpace( message.ReplyTo ) )
 				{
 					t.ReplyToAddress = Address.Parse( message.ReplyTo );
 				}
 
-                t.Body = rawMessage;
-            }
+				t.Body = rawMessage;
+			}
 
-            if (t.Id == null) t.Id = Guid.NewGuid().ToString();
-
-            return t;
-        }
+			return t;
+		}
 
         private static TransportMessage DeserializeMessage(byte[] rawMessage)
         {
