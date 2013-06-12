@@ -13,7 +13,11 @@
     <releaseNotes></releaseNotes>
     <copyright>Copyright (C) NServiceBus 2010-2012</copyright>
     <tags>nservicebus servicebus msmq cqrs publish subscribe</tags>
-    <dependencies/>
+     <dependencies>
+      <dependency id="NServiceBus" version="4.0.0.0-unstable3076" />
+      <dependency id="NServiceBus.Interfaces" version="4.0.0.0-unstable3076" />
+      <dependency id="ServiceBus.v1_0" version="1.0.1.0" />
+    </dependencies>
   </metadata>
   <files xmlns="">
     <file src="..\..\src\NServiceBus.Transports.WindowsServiceBus\bin\Release\NServiceBus.Transports.WindowsServiceBus.*" target="lib\net40" />
