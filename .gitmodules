@@ -1,0 +1,3 @@
+[submodule "BuildSupport"]
+	path = BuildSupport
+	url = git@github.com:ParticularSoftware/BuildSupport.git
