@@ -22,7 +22,7 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
         private Address address;
         private TransactionSettings settings;
         private Func<TransportMessage, bool> tryProcessMessage;
-        private Action<string, Exception> endProcessMessage;
+		private Action<TransportMessage, Exception> endProcessMessage;
         private TransactionOptions transactionOptions;
         private readonly Queue pendingMessages = Queue.Synchronized(new Queue());
         private readonly IList<INotifyReceivedMessages> notifiers = new List<INotifyReceivedMessages>();
@@ -40,11 +40,11 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
         /// 
         /// </summary>
         public Func<INotifyReceivedMessages> CreateNotifier = () =>
-            {
-				var notifier = Configure.Instance.Builder.Build<WindowsServiceBusQueueNotifier>();
-                notifier.BatchSize = maximumConcurrencyLevel;
-                return notifier;
-            };
+        {
+			var notifier = Configure.Instance.Builder.Build<WindowsServiceBusQueueNotifier>();
+            notifier.BatchSize = maximumConcurrencyLevel;
+            return notifier;
+        };
 
         
         /// <summary>
@@ -54,7 +54,7 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
         /// <param name="transactionSettings">The <see cref="TransactionSettings"/> to be used by <see cref="IDequeueMessages"/>.</param>
         /// <param name="tryProcessMessage">Called when a message has been dequeued and is ready for processing.</param>
         /// <param name="endProcessMessage">Needs to be called by <see cref="IDequeueMessages"/> after the message has been processed regardless if the outcome was successful or not.</param>
-        public virtual void Init(Address address, TransactionSettings transactionSettings, Func<TransportMessage, bool> tryProcessMessage, Action<string, Exception> endProcessMessage)
+		public virtual void Init( Address address, TransactionSettings transactionSettings, Func<TransportMessage, bool> tryProcessMessage, Action<TransportMessage, Exception> endProcessMessage )
         {
             settings = transactionSettings;
             this.tryProcessMessage = tryProcessMessage;
@@ -91,18 +91,18 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
             Task.Factory
                 .StartNew(TryProcessMessage, token, token, TaskCreationOptions.None, scheduler)
                 .ContinueWith(t =>
+                {
+                    if (t.Exception != null)
                     {
-                        if (t.Exception != null)
+                        t.Exception.Handle(ex =>
                         {
-                            t.Exception.Handle(ex =>
-                                {
-                                    circuitBreaker.Execute(() => Configure.Instance.RaiseCriticalError("Failed to receive message!" /* from?*/, ex));
-                                    return true;
-                                });
-                        }
+                            circuitBreaker.Execute(() => Configure.Instance.RaiseCriticalError("Failed to receive message!" /* from?*/, ex));
+                            return true;
+                        });
+                    }
 
-                        StartThread();
-                    }, TaskContinuationOptions.OnlyOnFaulted);
+                    StartThread();
+                }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
 
@@ -164,7 +164,7 @@ namespace NServiceBus.Unicast.Queuing.WindowsServiceBus
                 }
                 finally
                 {
-                    endProcessMessage(transportMessage != null ? transportMessage.Id : null, exception);
+                    endProcessMessage(transportMessage, exception);
                 }
             }
         }
