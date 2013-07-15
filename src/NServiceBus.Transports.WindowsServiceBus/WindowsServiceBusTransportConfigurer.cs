@@ -34,6 +34,7 @@ namespace NServiceBus.Transports.WindowsServiceBus
 
 			config.Configurer.RegisterSingleton<NamespaceManager>( namespaceClient );
 			config.Configurer.RegisterSingleton<MessagingFactory>( factory );
+			config.Configurer.ConfigureComponent<WindowsServiceBusQueueCreator>( DependencyLifecycle.InstancePerCall );
 
 			// make sure the transaction stays open a little longer than the long poll.
 			NServiceBus.Configure.Transactions.Advanced( settings => settings.DefaultTimeout( TimeSpan.FromSeconds( configSection.ServerWaitTime * 1.1 ) ).IsolationLevel( IsolationLevel.Serializable ) );

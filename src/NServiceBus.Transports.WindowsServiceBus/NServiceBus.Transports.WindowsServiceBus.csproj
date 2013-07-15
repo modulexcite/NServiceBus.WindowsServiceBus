@@ -58,6 +58,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Unicast\Queuing\WindowsServiceBus\WindowsServiceBusQueueCreator.cs" />
     <Compile Include="WindowsServiceBusTransportConfigurer.cs" />
     <Compile Include="Config\WindowsServiceBusQueueConfig.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
